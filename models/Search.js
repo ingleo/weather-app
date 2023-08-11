@@ -31,10 +31,7 @@ class Search {
   get capitalizeRecords() {
     return this.records.map((place) => {
       let words = place.split(" ");
-      words = words.map((w) => {
-        w[0].toUpperCase() + w.substring(1);
-        console.log(w.substring(1));
-      });
+      words = words.map((w) => w[0].toUpperCase() + w.substring(1));
       return words.join(" ");
     });
   }
