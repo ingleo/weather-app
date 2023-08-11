@@ -1,12 +1,15 @@
 const fs = require("fs");
 const axios = require("axios");
 
-class Busquedas {
-  historial = [];
+const mapboxUrl = "https://api.mapbox.com/geocoding/v5/mapbox.places";
+const openweatherUrl = "https://api.openweathermap.org/data/2.5/weather";
+
+class Search {
+  records = [];
   dbPath = "./db/database.json";
 
   constructor() {
-    this.leerDB();
+    this.readDB();
   }
 
   get mapboxParams() {
@@ -25,38 +28,41 @@ class Busquedas {
     };
   }
 
-  get capitalizeHistorial() {
-    return this.historial.map((lugar) => {
-      let palabras = lugar.split(" ");
-      palabras = palabras.map((p) => p[0].toUpperCase() + p.substring(1));
-      return palabras.join(" ");
+  get capitalizeRecords() {
+    return this.records.map((place) => {
+      let words = place.split(" ");
+      words = words.map((w) => {
+        w[0].toUpperCase() + w.substring(1);
+        console.log(w.substring(1));
+      });
+      return words.join(" ");
     });
   }
 
-  async buscarCiudad(lugar = "") {
+  async getCity(place = "") {
     try {
       const instance = axios.create({
-        baseURL: `https://api.mapbox.com/geocoding/v5/mapbox.places/${lugar}.json`,
+        baseURL: `${mapboxUrl}/${place}.json`,
         params: this.mapboxParams,
       });
 
       const response = await instance.get();
 
-      return response.data.features.map((lugar) => ({
-        id: lugar.id,
-        nombre: lugar.place_name,
-        lng: lugar.center[0],
-        lat: lugar.center[1],
+      return response.data.features.map((place) => ({
+        id: place.id,
+        name: place.place_name,
+        lng: place.center[0],
+        lat: place.center[1],
       }));
     } catch (error) {
       return [];
     }
   }
 
-  async climaLugar(lat, lon) {
+  async getWeather(lat, lon) {
     try {
       const instance = axios.create({
-        baseURL: `https://api.openweathermap.org/data/2.5/weather`,
+        baseURL: `${openweatherUrl}`,
         params: { ...this.openweatherParams, lat, lon },
       });
 
@@ -74,31 +80,31 @@ class Busquedas {
     }
   }
 
-  agregarHistorial(lugar = "") {
-    if (this.historial.includes(lugar.toLowerCase())) {
+  addRecord(place = "") {
+    if (this.records.includes(place.toLowerCase())) {
       return;
     }
-    this.historial.unshift(lugar.toLowerCase());
+    this.records.unshift(place.toLowerCase());
 
-    this.guardarDB();
+    this.saveDB();
   }
 
-  guardarDB() {
+  saveDB() {
     const payload = {
-      historial: this.historial,
+      records: this.records,
     };
 
     fs.writeFileSync(this.dbPath, JSON.stringify(payload));
   }
 
-  leerDB() {
+  readDB() {
     if (!fs.existsSync(this.dbPath)) return;
 
     const info = fs.readFileSync(this.dbPath, { encoding: "utf-8" });
     const data = JSON.parse(info);
 
-    this.historial = data.historial;
+    this.records = data.records;
   }
 }
 
-module.exports = Busquedas;
+module.exports = Search;

@@ -2,54 +2,56 @@ require("dotenv").config();
 require("colors");
 const {
   inquirerMenu,
-  pausa,
-  leerInput,
-  listarlugares,
+  pause,
+  readInput,
+  listPlaces,
 } = require("./helpers/inquirer");
-const Busquedas = require("./models/busquedas");
+
+const Search = require("./models/Search");
 
 const main = async () => {
-  const busquedas = new Busquedas();
-  let opt;
-  do {
-    opt = await inquirerMenu();
+  const search = new Search();
 
-    switch (opt) {
+  let option;
+  do {
+    option = await inquirerMenu();
+
+    switch (option) {
       case 1:
         //mostrar mensaje
-        const termino = await leerInput("Ciudad");
-        const lugares = await busquedas.buscarCiudad(termino);
-        const idSeleccionado = await listarlugares(lugares);
+        const term = await readInput("City");
+        const places = await search.getCity(term);
+        const selectedId = await listPlaces(places);
 
-        if (idSeleccionado === "0") continue;
-        const { nombre, lng, lat } = await lugares.find(
-          (lugar) => lugar.id === idSeleccionado
+        if (selectedId === "0") continue;
+        const { name, lng, lat } = await places.find(
+          (place) => place.id === selectedId
         );
 
-        busquedas.agregarHistorial(nombre);
+        search.addRecord(name);
 
-        const { desc, temp, min, max } = await busquedas.climaLugar(lat, lng);
+        const { desc, temp, min, max } = await search.getWeather(lat, lng);
 
         console.clear();
-        console.log("\nInformación de la ciudad\n".green);
-        console.log("Ciudad:", nombre.green);
+        console.log("\nCity information\n".green);
+        console.log("City:", name.green);
         console.log("Lat:", lat);
         console.log("Lng:", lng);
-        console.log("Descripción:", desc.green);
-        console.log("Temperatura:", temp);
-        console.log("Mínima:", min);
-        console.log("Máxima:", max);
+        console.log("Description:", desc.green);
+        console.log("Temperature:", temp);
+        console.log("Min:", min);
+        console.log("Max:", max);
         break;
       case 2:
-        busquedas.capitalizeHistorial.forEach((lugar, i) => {
+        search.capitalizeRecords.forEach((place, i) => {
           const idx = `${i + 1}.`.green;
-          console.log(`${idx} ${lugar}`);
+          console.log(`${idx} ${place}`);
         });
         break;
     }
 
-    await pausa();
-  } while (opt !== 0);
+    await pause();
+  } while (option !== 0);
 };
 
 main();
